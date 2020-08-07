@@ -19,6 +19,7 @@ struct FileInfo
     root::Ref
     name
     filetype::FileType
+    stat::Base.Filesystem.StatStruct
 end
 
 function ls()
@@ -31,8 +32,8 @@ function ls(dir)::Vector{FileInfo}
     (root, dirs, files) = first(walkdir_list)
     refroot = Ref(abspath(root))
     sort(vcat(
-        [FileInfo(refroot, name, directory) for name in dirs],
-        [FileInfo(refroot, name, normal) for name in files],
+        [FileInfo(refroot, name, directory, lstat(normpath(root, name))) for name in dirs],
+        [FileInfo(refroot, name, normal, lstat(normpath(root, name))) for name in files],
     ), by=f -> f.name)
 end
 
@@ -51,16 +52,20 @@ end
 
 function Base.:(==)(l::Vector{FileInfo}, r::Vector{FileInfo})
     length(l) == length(r) || return false
-    a = [(f.root[], f.name, f.filetype) for f in l]
-    b = [(f.root[], f.name, f.filetype) for f in r]
-    a == b
+    all(
+        (a.root[] == b.root[] && a.name == b.name && a.filetype === b.filetype && a.stat == b.stat)
+        for (a, b) in zip(l, r))
 end
 
 function Base.show(io::IO, mime::MIME"text/plain", f::FileInfo)
-    if isdir(f)
-        printstyled(io, f.name, color=:cyan, bold=true)
+    if islink(f.stat)
+        printstyled(io, f.name, color=:magenta)
     else
-        print(io, f.name)
+        if isdir(f)
+            printstyled(io, f.name, color=:cyan, bold=true)
+        else
+            print(io, f.name)
+        end
     end
 end
 
