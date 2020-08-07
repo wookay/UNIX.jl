@@ -27,14 +27,20 @@ function ls()
     ls(dir)
 end
 
-function ls(dir)::Vector{FileInfo}
-    walkdir_list = walkdir(dir)
-    (root, dirs, files) = first(walkdir_list)
-    refroot = Ref(abspath(root))
-    sort(vcat(
-        [FileInfo(refroot, name, directory, lstat(normpath(root, name))) for name in dirs],
-        [FileInfo(refroot, name, normal, lstat(normpath(root, name))) for name in files],
-    ), by=f -> f.name)
+function ls(path)::Vector{FileInfo}
+    if isdir(path)
+        walkdir_list = walkdir(path)
+        (root, dirs, files) = first(walkdir_list)
+        refroot = Ref(abspath(root))
+        sort(vcat(
+            [FileInfo(refroot, name, directory, lstat(normpath(root, name))) for name in dirs],
+            [FileInfo(refroot, name, normal, lstat(normpath(root, name))) for name in files],
+        ), by=f -> f.name)
+    else
+        (root, name) = splitdir(path)
+        refroot = Ref(abspath(root))
+        [FileInfo(refroot, name, normal, lstat(path))]
+    end
 end
 
 function ls(dir::FileInfo)::Vector{FileInfo}
@@ -48,6 +54,10 @@ end
 
 function Base.isdir(f::FileInfo)
     f.filetype === directory
+end
+
+function Base.islink(f::FileInfo)
+    islink(f.stat)
 end
 
 function Base.:(==)(l::Vector{FileInfo}, r::Vector{FileInfo})

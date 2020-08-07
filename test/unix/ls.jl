@@ -10,6 +10,7 @@ if cwd != change_to_dir
     @info :cd change_to_dir
     cd(change_to_dir)
 end
+
 fs = ls()
 @info :ls fs
 fnames = [f.name for f in fs]
@@ -23,6 +24,11 @@ unix = fs["unix"]
 
 not_file = fs["not_file"]
 @test not_file === nothing
+
+fs = ls(".")
+runtestsjl = fs["runtests.jl"]
+@test !isdir(runtestsjl)
+@test !islink(runtestsjl)
 
 cd(cwd)
 
