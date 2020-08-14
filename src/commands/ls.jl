@@ -70,6 +70,8 @@ end
 function Base.show(io::IO, mime::MIME"text/plain", f::FileInfo)
     if islink(f.stat)
         printstyled(io, f.name, color=:magenta)
+        print(io, " -> ")
+        print(io, readlink(normpath(f.root[], f.name)))
     else
         if isdir(f)
             printstyled(io, f.name, color=:cyan, bold=true)
